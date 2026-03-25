@@ -3,6 +3,7 @@ const Enrollment = require('../models/Enrollment');
 const Course = require('../models/Course');
 const User = require('../models/User');
 const Payment = require('../models/Payment');
+const Notification = require('../models/Notification');
 const LessonProgress = require('../models/LessonProgress');
 
 const enroll = async (req, res) => {
@@ -36,7 +37,16 @@ const enroll = async (req, res) => {
     const populatedEnrollment = await Enrollment.findById(enrollment._id)
       .populate('courseId')
       .lean({ virtuals: true });
-    const enrollmentResult = { ...populatedEnrollment, course: populatedEnrollment.courseId };
+    
+    const enrollmentResult = { 
+      ...populatedEnrollment, 
+      id: populatedEnrollment._id.toString(),
+      courseId: courseId.toString(), // Keep as string ID for frontend navigation
+      course: {
+        ...populatedEnrollment.courseId,
+        id: populatedEnrollment.courseId._id.toString()
+      }
+    };
 
     // Asynchronous Communication Dispatch (Background)
     (async () => {
@@ -59,6 +69,29 @@ const enroll = async (req, res) => {
             orderId: 'FREE-CAPTURE-' + Math.floor(1000 + Math.random() * 9000),
           }),
         ]);
+        // 3. Persistent Notification & Real-time Socket Alert for Instructor
+        try {
+          const notif = await new Notification({
+            userId: course.instructorId,
+            type: 'ENROLLMENT',
+            message: `${learner.name} just enrolled in your course: ${course.title}!`,
+            link: `/admin/courses/${course.id}/attendees`
+          }).save();
+
+          const { sendToUser } = require('../services/socketService');
+          sendToUser(course.instructorId.toString(), 'new_notification', notif);
+
+          // 4. Platform-wide Admin Alert
+          const { notifyAdmins } = require('../services/notificationService');
+          await notifyAdmins(
+            `${learner.name} enrolled in ${course.title}`,
+            `/admin/reporting`,
+            'ENROLLMENT'
+          );
+        } catch (notifErr) {
+          console.error('[ENROLL_HUB_NOTIF] Failed to dispatch instructor alert:', notifErr.message);
+        }
+
         console.log(`[ENROLL_HUB] Intelligence tokens dispatched for free acquisition: ${learner.email}`);
       } catch (commError) {
         console.error('[ENROLL_HUB_FAILURE] Communication collapsed:', commError.message);
@@ -96,6 +129,7 @@ const getMyEnrollments = async (req, res) => {
         return {
           ...enrollment,
           id: enrollment._id.toString(),
+          courseId: course._id.toString(), // Critical: Ensure root courseId is string, not object
           course: {
             ...course,
             id: course._id.toString(),

@@ -17,6 +17,21 @@ const register = async (req, res) => {
 
     const user = await new User({ name, email, password: hashed, role: userRole }).save();
 
+    // Notify Admins
+    (async () => {
+      try {
+        const { notifyAdmins } = require('../services/notificationService');
+        const roleLabel = userRole === 'INSTRUCTOR' ? 'Instructor' : userRole === 'ADMIN' ? 'Administrator' : 'Student';
+        await notifyAdmins(
+          `New ${roleLabel} joined the platform: ${user.name}`,
+          `/admin/users`,
+          'USER_REGISTRATION'
+        );
+      } catch (err) {
+        console.error('Registration admin notification error:', err);
+      }
+    })();
+
     const payload = { id: user.id, email: user.email, role: user.role, name: user.name };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);

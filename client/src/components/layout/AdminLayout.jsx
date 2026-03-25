@@ -1,12 +1,15 @@
-import { useState } from 'react'
-import AdminSidebar from './AdminSidebar'
-import { motion } from 'framer-motion'
+import { useState } from "react";
+import AdminSidebar from "./AdminSidebar";
+import { motion } from "framer-motion";
 
 const AdminLayout = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false)
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden">
-      <AdminSidebar collapsed={collapsed} onToggle={() => setCollapsed((v) => !v)} />
+      <AdminSidebar
+        collapsed={collapsed}
+        onToggle={() => setCollapsed((v) => !v)}
+      />
       <main className="flex-1 overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
@@ -18,7 +21,7 @@ const AdminLayout = ({ children }) => {
         </motion.div>
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default AdminLayout
+export default AdminLayout;

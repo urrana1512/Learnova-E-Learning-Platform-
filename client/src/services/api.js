@@ -2,7 +2,6 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || '/api',
-  headers: { 'Content-Type': 'application/json' },
 })
 
 api.interceptors.request.use((config) => {
@@ -101,6 +100,40 @@ export const reviewAPI = {
   create: (courseId, data) => api.post(`/reviews/${courseId}`, data),
 }
 
+// ─── Learner Dashboard ─────────────────────────────────────────────────────────
+export const learnerAPI = {
+  getDashboardStats: () => api.get('/learner/dashboard-stats'),
+  getLeaderboard: () => api.get('/learner/leaderboard'),
+  getInsights: () => api.get('/learner/insights'),
+}
+
+export const wishlistAPI = {
+  toggle: (courseId) => api.post('/wishlist/toggle', { courseId }),
+  get: () => api.get('/wishlist')
+}
+
+export const bookmarkAPI = {
+  list: (courseId) => api.get('/bookmarks', { params: { courseId } }),
+  add: (courseId, lessonId) => api.post('/bookmarks', { courseId, lessonId }),
+  remove: (lessonId) => api.delete(`/bookmarks/${lessonId}`),
+}
+
+export const noteAPI = {
+  list: (courseId, lessonId) => api.get('/notes', { params: { courseId, lessonId } }),
+  upsert: (courseId, lessonId, content) => api.post('/notes', { courseId, lessonId, content }),
+  delete: (lessonId) => api.delete(`/notes/${lessonId}`),
+}
+
+export const messageAPI = {
+  send: (data) => api.post('/messages', data),
+  getHistory: (userId, courseId) => api.get(`/messages/history/${userId}/${courseId}`),
+  getChats: () => api.get('/messages/chats'),
+  markRead: (senderId, courseId) => api.put(`/messages/read/${senderId}/${courseId}`),
+  upload: (formData) => api.post('/messages/upload', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  })
+}
+
 // ─── Reporting ────────────────────────────────────────────────────────────────
 export const reportingAPI = {
   get: (params) => api.get('/reporting', { params }),
@@ -114,12 +147,45 @@ export const paymentAPI = {
   getInstructorStats: () => api.get('/payments/instructor/stats'),
 }
 
+// ─── Announcements ────────────────────────────────────────────────────────────
+export const announcementAPI = {
+  list: (courseId) => api.get(`/courses/${courseId}/announcements`),
+  create: (courseId, data) => api.post(`/courses/${courseId}/announcements`, data),
+  delete: (id) => api.delete(`/announcements/${id}`),
+}
+
 // ─── Users (Community) ────────────────────────────────────────────────────────
 export const userAPI = {
   toggleFollow: (id) => api.post(`/users/${id}/follow`),
   getProfile: (id) => api.get(`/users/${id}/profile`),
-  getNotifications: () => api.get(`/users/me/notifications`),
-  markNotificationsRead: () => api.patch(`/users/me/notifications/read`)
-}
+  getFollowers: (id) => api.get(`/users/social/followers/${id}`),
+  getFollowing: (id) => api.get(`/users/social/following/${id}`),
+  getNotifications: () => api.get('/users/me/notifications'),
+  markNotificationsRead: () => api.patch('/users/me/notifications/read'),
+  broadcastMessage: (data) => api.post('/messages/broadcast', data),
+  broadcastToCourse: (data) => api.post('/messages/broadcast/course', data),
+  updateProfile: (data) => api.patch('/users/me/profile', data),
+};
+
+export const socialAPI = {
+  // Friend Requests
+  sendRequest: (receiverId) => api.post('/social/friends/request', { receiverId }),
+  respondRequest: (requestId, status) => api.post('/social/friends/respond', { requestId, status }),
+  getPending: () => api.get('/social/friends/pending'),
+  getFriends: () => api.get('/social/friends'),
+  toggleFavorite: (friendshipId) => api.post('/social/friends/favorite', { friendshipId }),
+  removeFriend: (friendId) => api.delete(`/social/friends/${friendId}`),
+
+  // Following
+  getFollowers: () => api.get('/social/followers'),
+
+  // Blocking
+  block: (targetId) => api.post('/social/block', { targetId }),
+  unblock: (targetId) => api.delete(`/social/block/${targetId}`),
+  getBlocked: () => api.get('/social/blocked'),
+
+  // Search
+  search: (query) => api.get('/social/search', { params: { query } }),
+};
 
 export default api

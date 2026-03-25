@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { ShieldCheck, Lock, CreditCard, Landmark, Smartphone, ChevronRight, CheckCircle2, History, Info, Globe, SmartphoneNfc, ArrowLeft, Heart, Zap, Shield, HelpCircle, Trophy, QrCode as QrIcon, Search } from 'lucide-react'
 import { courseAPI, paymentAPI } from '../../services/api'
 import { useAuth } from '../../context/AuthContext'
-import LearnerLayout from '../../components/layout/LearnerLayout'
+import LearnerLayout from '../../components/layout/PublicLayout'
 import Button from '../../components/ui/Button'
 import Spinner from '../../components/ui/Spinner'
 import toast from 'react-hot-toast'
@@ -19,6 +19,9 @@ const Checkout = () => {
   const [activeTab, setActiveTab] = useState('card')
   const [processing, setProcessing] = useState(false)
   const [statusIdx, setStatusIdx] = useState(0)
+  const [showOTP, setShowOTP] = useState(false)
+  const [otpValue, setOtpValue] = useState(['', '', '', '', '', ''])
+  const [verifyingOTP, setVerifyingOTP] = useState(false)
   
   const STATUS_STEPS = [
     "Establishing secure acquisition tunnel...",
@@ -72,6 +75,19 @@ const Checkout = () => {
   const total = Math.round((subtotal + gst) * 100) / 100
 
   const handlePay = async (method) => {
+    setShowOTP(true)
+  }
+
+  const handleVerifyOTP = async () => {
+    setVerifyingOTP(true)
+    setTimeout(() => {
+      setShowOTP(false)
+      executeProcessing()
+    }, 1500)
+  }
+
+  const executeProcessing = async () => {
+    const method = activeTab
     setProcessing(true)
     setTimeout(async () => {
       try {
@@ -321,6 +337,71 @@ const Checkout = () => {
                      <span className="text-[9px] font-black text-white/40 uppercase tracking-widest">AES-256 Quantum Encryption Active</span>
                   </div>
                </motion.div>
+            )}
+         </AnimatePresence>
+
+         {/* OTP Modal */}
+         <AnimatePresence>
+            {showOTP && (
+              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[4000] bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-6">
+                 <motion.div initial={{ scale: 0.9, y: 20 }} animate={{ scale: 1, y: 0 }} className="bg-white rounded-[2.5rem] p-10 max-w-sm w-full shadow-2xl relative overflow-hidden">
+                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-[#3395FF] to-[#017E84]" />
+                    <div className="text-center">
+                       <div className="w-16 h-16 bg-blue-50 rounded-2xl flex items-center justify-center text-[#3395FF] mx-auto mb-6">
+                          <SmartphoneNfc size={32} />
+                       </div>
+                       <h3 className="text-xl font-black text-slate-900 tracking-tight font-sora">Authentication Required</h3>
+                       <p className="text-slate-500 text-xs font-medium mt-2 leading-relaxed">
+                          We've dispatched a unique 6-digit access code to your registered device for this ₹{total.toLocaleString()} acquisition.
+                       </p>
+
+                       <div className="flex gap-2 justify-center my-8">
+                          {otpValue.map((v, i) => (
+                            <input
+                              key={i}
+                              id={`otp-${i}`}
+                              type="text"
+                              maxLength={1}
+                              value={v}
+                              onChange={(e) => {
+                                const val = e.target.value.replace(/\D/g, '')
+                                if (!val && e.nativeEvent.inputType === 'deleteContentBackward') {
+                                   const newOtp = [...otpValue]
+                                   newOtp[i] = ''
+                                   setOtpValue(newOtp)
+                                   if (i > 0) document.getElementById(`otp-${i-1}`).focus()
+                                   return
+                                }
+                                if (val) {
+                                  const newOtp = [...otpValue]
+                                  newOtp[i] = val
+                                  setOtpValue(newOtp)
+                                  if (i < 5) document.getElementById(`otp-${i+1}`).focus()
+                                }
+                              }}
+                              className="w-10 h-14 bg-slate-50 border-2 border-slate-100 rounded-xl text-center text-lg font-black text-slate-900 focus:border-[#3395FF] focus:bg-white transition-all outline-none"
+                            />
+                          ))}
+                       </div>
+
+                       <div className="space-y-3">
+                          <Button 
+                            loading={verifyingOTP} 
+                            onClick={handleVerifyOTP} 
+                            disabled={otpValue.some(v => !v)}
+                            className="w-full h-14 rounded-xl text-[10px] font-black uppercase tracking-widest"
+                          >
+                            Verify & Complete 
+                          </Button>
+                          <button onClick={() => { setShowOTP(false); setVerifyingOTP(false); }} className="text-[10px] font-black text-slate-400 uppercase tracking-widest hover:text-slate-600 transition-colors">Abort Transaction</button>
+                       </div>
+                       
+                       <p className="text-[10px] text-slate-400 mt-8 font-medium">
+                          Simulation: Use any 6 digits to bypass
+                       </p>
+                    </div>
+                 </motion.div>
+              </motion.div>
             )}
          </AnimatePresence>
       </div>

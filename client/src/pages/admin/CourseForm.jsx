@@ -235,6 +235,20 @@ const LessonEditorModal = ({ isOpen, onClose, courseId, lesson, quizzes = [], on
               <div className="flex items-center gap-3 bg-white p-4 rounded-2xl border border-slate-100">
                 <Toggle checked={form.allowDownload} onChange={set('allowDownload')} label="Allow Direct Download" />
               </div>
+
+              {/* Video Preview */}
+              {lesson?.fileUrl && !contentFile && !fileDeleted && (
+                <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-950 aspect-video relative group">
+                  <video 
+                    src={lesson.fileUrl} 
+                    className="w-full h-full object-contain"
+                    controls 
+                  />
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-[10px] font-black text-white uppercase tracking-widest">Live Cloudinary Asset</p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
           {(form.type === 'DOCUMENT' || form.type === 'IMAGE') && (
@@ -285,6 +299,24 @@ const LessonEditorModal = ({ isOpen, onClose, courseId, lesson, quizzes = [], on
                     >
                       <Trash2 size={16} />
                     </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Document/Image Preview */}
+              {lesson?.fileUrl && !contentFile && !fileDeleted && (
+                <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-50 min-h-[200px] flex items-center justify-center relative group">
+                  {form.type === 'IMAGE' ? (
+                    <img src={lesson.fileUrl} className="max-w-full max-h-[300px] object-contain" alt="Current" />
+                  ) : (
+                    <div className="text-center p-8">
+                      <FileText size={40} className="mx-auto mb-3 text-slate-300" />
+                      <p className="text-xs font-bold text-slate-500 mb-4">PDF Document Linked</p>
+                      <Button size="xs" variant="secondary" onClick={() => window.open(lesson.fileUrl, '_blank')}>View Document</Button>
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-black/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Live Asset Preview</p>
                   </div>
                 </div>
               )}

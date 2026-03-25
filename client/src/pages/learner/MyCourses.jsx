@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import {
   BookOpen, Zap, Target, Trophy, Search, PlayCircle,
@@ -8,7 +8,8 @@ import {
 import LearnerLayout from '../../components/layout/LearnerLayout'
 import Spinner from '../../components/ui/Spinner'
 import Button from '../../components/ui/Button'
-import { enrollmentAPI } from '../../services/api'
+import { enrollmentAPI, wishlistAPI } from '../../services/api'
+import { Heart, Trash2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { getBadge, BADGE_LEVELS, getProgressToNextBadge } from '../../utils/badge'
 import { calcCompletionPercent, formatDate } from '../../utils/progress'
@@ -27,21 +28,70 @@ const item = {
 const MyCourses = () => {
   const { user } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [enrollments, setEnrollments] = useState([])
+  const [wishlist, setWishlist] = useState([])
   const [loading, setLoading] = useState(true)
+  const [wishlistLoading, setWishlistLoading] = useState(false)
   const [search, setSearch] = useState('')
-  const [activeTab, setActiveTab] = useState('courses')
+  const [filter, setFilter] = useState('ALL') // ALL, IN_PROGRESS, COMPLETED
+  const [activeTab, setActiveTab] = useState(() => {
+    const params = new URLSearchParams(location.search);
+    return params.get('tab') || 'courses';
+  })
 
   useEffect(() => {
-    enrollmentAPI.myEnrollments()
-      .then(({ data }) => setEnrollments(data))
-      .catch(() => toast.error('Failed to load enrollments'))
-      .finally(() => setLoading(false))
+    const params = new URLSearchParams(location.search)
+    const tab = params.get('tab') || 'courses'
+    setActiveTab(tab)
+  }, [location.search])
+
+  useEffect(() => {
+    loadEnrollments()
   }, [])
+
+  useEffect(() => {
+    if (activeTab === 'wishlist') {
+      loadWishlist()
+    }
+  }, [activeTab])
+
+  const loadEnrollments = async () => {
+    setLoading(true)
+    try {
+      const { data } = await enrollmentAPI.myEnrollments()
+      setEnrollments(data)
+    } catch { toast.error('Failed to load enrollments') }
+    finally { setLoading(false) }
+  }
+
+  const loadWishlist = async () => {
+    setWishlistLoading(true)
+    try {
+      const { data } = await wishlistAPI.get()
+      setWishlist(data)
+    } catch { toast.error('Failed to load wishlist') }
+    finally { setWishlistLoading(false) }
+  }
+
+  const handleRemoveWishlist = async (e, courseId) => {
+    e.stopPropagation()
+    try {
+      await wishlistAPI.toggle(courseId)
+      setWishlist(prev => prev.filter(c => c.id !== courseId))
+      toast.success('Removed from wishlist')
+    } catch { toast.error('Failed to update wishlist') }
+  }
 
   const badge = getBadge(user?.totalPoints || 0)
   const nextProgress = getProgressToNextBadge(user?.totalPoints || 0)
-  const filtered = enrollments.filter(e => e.course.title.toLowerCase().includes(search.toLowerCase()))
+  
+  const filtered = enrollments.filter(e => {
+    const matchesSearch = e.course.title.toLowerCase().includes(search.toLowerCase())
+    const matchesFilter = filter === 'ALL' || e.status === filter
+    return matchesSearch && matchesFilter
+  })
+
   const completed = enrollments.filter(e => e.status === 'COMPLETED').length
   const inProgress = enrollments.filter(e => e.status === 'IN_PROGRESS').length
 
@@ -210,28 +260,56 @@ const MyCourses = () => {
             {/* === MAIN CONTENT === */}
             <div className="flex-1 space-y-6 min-w-0">
               {/* Tabs & Toolbar */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 pb-2 border-b border-slate-200">
-                 <div className="flex gap-8">
-                    {['courses', 'transactions'].map(t => (
-                       <button 
-                          key={t}
-                          onClick={() => setActiveTab(t)}
-                          className={`relative py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:text-slate-900 ${activeTab === t ? 'text-slate-900' : 'text-slate-400'}`}
-                       >
-                          {t}
-                          {activeTab === t && (
-                             <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#714B67] rounded-full" />
-                          )}
-                       </button>
-                    ))}
+               <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-2 border-b border-slate-200">
+                 <div className="flex items-center gap-6 overflow-x-auto no-scrollbar pb-2 lg:pb-0">
+                    <div className="flex gap-6 border-r border-slate-200 pr-6 mr-2">
+                      {[
+                        { id: 'courses', label: 'My Courses' },
+                        { id: 'wishlist', label: 'Wishlist' },
+                        { id: 'transactions', label: 'History' }
+                      ].map(t => (
+                        <button 
+                            key={t.id}
+                            onClick={() => setActiveTab(t.id)}
+                            className={`relative py-2 text-[10px] font-black uppercase tracking-[0.2em] transition-all hover:text-slate-900 ${activeTab === t.id ? 'text-slate-900' : 'text-slate-400'}`}
+                        >
+                            {t.label}
+                            {activeTab === t.id && (
+                              <motion.div layoutId="tab-active" className="absolute bottom-0 left-0 right-0 h-1 bg-[#714B67] rounded-full" />
+                            )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {activeTab === 'courses' && (
+                      <div className="flex gap-4">
+                        {[
+                          { id: 'ALL', label: 'All' },
+                          { id: 'IN_PROGRESS', label: 'In Progress' },
+                          { id: 'COMPLETED', label: 'Completed' }
+                        ].map(f => (
+                          <button
+                            key={f.id}
+                            onClick={() => setFilter(f.id)}
+                            className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${
+                              filter === f.id 
+                                ? 'bg-[#714B67] text-white shadow-lg shadow-[#714B67]/20' 
+                                : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                            }`}
+                          >
+                            {f.label}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                  </div>
                  
                  {activeTab === 'courses' && (
-                    <div className="relative flex-1 max-w-sm group">
+                    <div className="relative flex-1 max-w-xs group">
                        <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-[#714B67] transition-colors" />
                        <input
                          type="text"
-                         placeholder="Search your courses..."
+                         placeholder="Filter your library..."
                          value={search}
                          onChange={e => setSearch(e.target.value)}
                          className="w-full h-10 bg-white border-2 border-slate-200 rounded-xl pl-11 pr-4 text-[10px] font-bold text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-[#714B67] transition-all uppercase tracking-widest"
@@ -242,6 +320,53 @@ const MyCourses = () => {
 
               {activeTab === 'transactions' ? (
                  <TransactionHistory />
+              ) : activeTab === 'wishlist' ? (
+                 <div className="space-y-6">
+                    {wishlistLoading ? (
+                      <div className="flex flex-col items-center py-24 gap-4">
+                        <Spinner size="xl" />
+                        <p className="text-sm font-bold text-slate-400 uppercase tracking-widest animate-pulse">Syncing Wishlist...</p>
+                      </div>
+                    ) : wishlist.length === 0 ? (
+                      <div className="flex flex-col items-center py-24 text-center border-2 border-dashed border-slate-200 rounded-2xl bg-white">
+                        <Heart size={40} className="text-slate-200 mb-4" />
+                        <h3 className="text-xl font-black text-slate-700 font-sora">Your heart is empty</h3>
+                        <p className="text-slate-400 text-xs mt-2 mb-6 uppercase tracking-widest font-black">Save courses you're interested in for later</p>
+                        <Button onClick={() => navigate('/courses')}>Explore Catalog</Button>
+                      </div>
+                    ) : (
+                      <motion.div variants={container} initial="hidden" animate="show" className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {wishlist.map(course => (
+                          <motion.div 
+                            key={course.id} 
+                            variants={item}
+                            onClick={() => navigate(`/courses/${course.id}`)}
+                            className="group bg-white border border-slate-200 rounded-2xl overflow-hidden cursor-pointer hover:border-pink-200 hover:shadow-xl hover:shadow-pink-500/5 transition-all"
+                          >
+                            <div className="relative h-32">
+                               <img src={course.coverImage} className="w-full h-full object-cover" alt="" />
+                               <div className="absolute top-3 right-3">
+                                 <button 
+                                   onClick={(e) => handleRemoveWishlist(e, course.id)}
+                                   className="w-8 h-8 rounded-lg bg-white/90 backdrop-blur-md text-slate-400 hover:text-red-500 flex items-center justify-center transition-all shadow-lg"
+                                 >
+                                    <Trash2 size={14} />
+                                 </button>
+                               </div>
+                            </div>
+                            <div className="p-5">
+                               <h4 className="font-black text-slate-900 font-sora text-sm mb-1">{course.title}</h4>
+                               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">{course.instructor?.name || 'Academy Expert'}</p>
+                               <div className="mt-4 flex items-center justify-between">
+                                  <span className="text-sm font-black text-[#714B67]">₹{course.price || 0}</span>
+                                  <button className="text-[9px] font-black uppercase tracking-widest text-[#017E84] flex items-center gap-1">View Details <ChevronRight size={12} /></button>
+                               </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </motion.div>
+                    )}
+                 </div>
               ) : (
                  <>
                     {/* Course Grid */}

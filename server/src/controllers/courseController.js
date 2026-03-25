@@ -268,6 +268,18 @@ const togglePublish = async (req, res) => {
         }));
         await Notification.insertMany(notifications);
       }
+
+      // Notify Platform Admins
+      (async () => {
+        try {
+          const { notifyAdmins } = require('../services/notificationService');
+          await notifyAdmins(
+            `${instructor.name} launched a new course: ${updated.title}`,
+            `/admin/courses`,
+            'COURSE_LAUNCH'
+          );
+        } catch (err) {}
+      })();
     }
 
     res.json(updated);
@@ -368,8 +380,21 @@ const getCourseDetail = async (req, res) => {
     const formattedLessons = lessons.map(l => ({
       ...l,
       id: l._id.toString(),
-      attachments: l.attachments.map(a => ({ ...a, id: a._id.toString() })),
+      courseId: l.courseId?.toString(),
+      attachments: (l.attachments || []).map(a => ({ ...a, id: a._id.toString() })),
       quiz: l.quiz ? { ...l.quiz, id: l.quiz._id.toString() } : null
+    }));
+
+    const formattedQuizzes = quizzes.map(q => ({
+      ...q,
+      id: q._id.toString()
+    }));
+
+    const formattedProgress = (lessonProgress || []).map(p => ({
+      ...p,
+      id: p._id.toString(),
+      lessonId: p.lessonId.toString(),
+      userId: p.userId.toString()
     }));
 
     res.json({
@@ -378,14 +403,14 @@ const getCourseDetail = async (req, res) => {
         id: course._id.toString(),
         instructor: course.instructorId,
         lessons: formattedLessons,
-        quizzes: quizzes.map(q => ({ ...q, id: q._id.toString() })),
+        quizzes: formattedQuizzes,
         reviews: reviews.map((r) => ({ ...r, id: r._id.toString(), user: r.userId })),
         _count: { enrollments: enrollmentCount },
         totalDuration,
       },
-      enrollment,
-      lessonProgress,
-      quizAttempts,
+      enrollment: enrollment ? { ...enrollment, id: enrollment._id.toString() } : null,
+      lessonProgress: formattedProgress,
+      quizAttempts: (quizAttempts || []).map(a => ({ ...a, id: a._id.toString(), quizId: a.quizId.toString() })),
       leaderboard,
       isFollowing,
     });

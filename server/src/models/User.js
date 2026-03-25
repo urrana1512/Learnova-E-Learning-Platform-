@@ -9,6 +9,11 @@ const userSchema = new mongoose.Schema(
     isActive:    { type: Boolean, default: true },
     totalPoints: { type: Number, default: 0 },
     avatar:      { type: String, default: null },
+    bio:         { type: String, default: '' },
+    contactNo:   { type: String, default: '' },
+    information: { type: String, default: '' },
+    isOnline:    { type: Boolean, default: false },
+    lastSeen:    { type: Date, default: Date.now },
   },
   {
     timestamps: { createdAt: 'createdAt', updatedAt: false },

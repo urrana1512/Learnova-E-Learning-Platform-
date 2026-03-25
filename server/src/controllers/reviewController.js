@@ -1,5 +1,7 @@
 const Review = require('../models/Review');
 const User = require('../models/User');
+const Course = require('../models/Course');
+const Notification = require('../models/Notification');
 
 const getReviews = async (req, res) => {
   try {
@@ -29,6 +31,27 @@ const createReview = async (req, res) => {
     ).populate('userId', 'id name avatar').lean({ virtuals: true });
 
     const updatedUser = await User.findById(req.user.id).select('totalPoints');
+
+    // Notify Instructor
+    (async () => {
+      try {
+        const course = await Course.findById(req.params.courseId).select('title instructorId');
+        if (course) {
+          const learner = await User.findById(req.user.id).select('name');
+          const notif = await new Notification({
+            userId: course.instructorId,
+            type: 'REVIEW',
+            message: `${learner.name} left a ${rating}-star review for ${course.title}!`,
+            link: `/admin/courses/${course.id}/edit`
+          }).save();
+
+          const { sendToUser } = require('../services/socketService');
+          sendToUser(course.instructorId.toString(), 'new_notification', notif);
+        }
+      } catch (err) {
+        console.error('Review notification error:', err);
+      }
+    })();
 
     res.status(201).json({
       review: { ...review, user: review.userId },

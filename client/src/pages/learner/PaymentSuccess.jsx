@@ -3,7 +3,7 @@ import { useLocation, useNavigate, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { CheckCircle2, ChevronRight, BookOpen, LayoutDashboard, Share2, Download, History, ArrowRight } from 'lucide-react'
 import confetti from 'canvas-confetti'
-import LearnerLayout from '../../components/layout/LearnerLayout'
+import LearnerLayout from '../../components/layout/PublicLayout'
 import Button from '../../components/ui/Button'
 import Badge from '../../components/ui/Badge'
 

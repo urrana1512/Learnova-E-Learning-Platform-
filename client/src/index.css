@@ -37,6 +37,29 @@
   --shadow-teal: 0 8px 32px rgba(1,126,132,0.2);
 }
 
+html.dark {
+  --color-bg: #0F172A;
+  --color-surface: #1E293B;
+  --color-surface-2: #334155;
+  --color-border: #334155;
+  --color-text: #F8FAFC;
+  --color-text-secondary: #94A3B8;
+  --color-text-muted: #64748B;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg: 0 10px 40px rgba(0,0,0,0.5);
+}
+
+html.dark body {
+  @apply bg-slate-950 text-slate-100;
+}
+
+html.dark body::before {
+  background: 
+    radial-gradient(ellipse at 0% 0%, rgba(113,75,103,0.15) 0%, transparent 50%),
+    radial-gradient(ellipse at 100% 100%, rgba(1,126,132,0.1) 0%, transparent 50%);
+}
+
 /* ============ SCROLLBAR ============ */
 * {
   scrollbar-width: thin;

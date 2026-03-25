@@ -4,7 +4,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'learnova_secret';
 const JWT_REFRESH_SECRET = process.env.JWT_REFRESH_SECRET || 'learnova_refresh_secret';
 
 const signAccessToken = (payload) => {
-  return jwt.sign(payload, JWT_SECRET, { expiresIn: '15m' });
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: '150m' });
 };
 
 const signRefreshToken = (payload) => {

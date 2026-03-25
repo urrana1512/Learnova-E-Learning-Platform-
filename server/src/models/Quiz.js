@@ -14,6 +14,7 @@ optionSchema.virtual('id').get(function () { return this._id.toHexString(); });
 const questionSchema = new mongoose.Schema(
   {
     text:    { type: String, required: true },
+    category: { type: String, default: 'General' },
     options: { type: [optionSchema], default: [] },
     order:   { type: Number, default: 0 },
   },

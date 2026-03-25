@@ -2,6 +2,8 @@ const { uploadToCloudinary } = require('../utils/cloudinary');
 const Lesson = require('../models/Lesson');
 const Attachment = require('../models/Attachment');
 const Quiz = require('../models/Quiz');
+const Enrollment = require('../models/Enrollment');
+const Notification = require('../models/Notification');
 
 const getLessons = async (req, res) => {
   try {
@@ -87,6 +89,35 @@ const createLesson = async (req, res) => {
       allowDownload: allowDownload === 'true' || allowDownload === true,
       order: nextOrder,
     }).save();
+
+    // Notify all enrolled students
+    (async () => {
+      try {
+        const enrollments = await Enrollment.find({ courseId: req.params.courseId }).select('userId');
+        const studentIds = enrollments.map(e => e.userId);
+        if (studentIds.length > 0) {
+          const Course = require('../models/Course');
+          const course = await Course.findById(req.params.courseId).select('title');
+          
+          const notifications = studentIds.map(sid => ({
+            userId: sid,
+            type: 'COURSE',
+            message: `A new lesson "${title}" was added to ${course.title}!`,
+            link: `/courses/${req.params.courseId}/learn/${lesson._id}`
+          }));
+          await Notification.insertMany(notifications);
+
+          const { sendToUser } = require('../services/socketService');
+          studentIds.forEach(sid => sendToUser(sid.toString(), 'new_notification', {
+            type: 'COURSE',
+            message: `A new lesson was added to ${course.title}`,
+            link: `/courses/${req.params.courseId}`
+          }));
+        }
+      } catch (err) {
+        console.error('Lesson notification error:', err);
+      }
+    })();
 
     const attachments = await Attachment.find({ lessonId: lesson._id }).lean({ virtuals: true });
     res.status(201).json({ 

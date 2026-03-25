@@ -315,9 +315,14 @@ const QuizPlayer = () => {
                 </div>
                 <div className="bg-[#714B67]/5 border border-[#714B67]/10 rounded-3xl p-6 relative overflow-hidden group">
                   <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-20 transition-opacity"><Award size={40} className="text-[#714B67]" /></div>
-                  <p className="text-3xl sm:text-4xl font-black text-[#714B67] font-sora tracking-tighter mb-1">
+                  <motion.p 
+                    initial={{ scale: 0.5, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    transition={{ delay: 0.5, type: 'spring' }}
+                    className={`text-3xl sm:text-4xl font-black font-sora tracking-tighter mb-1 ${result.pointsEarned > 0 ? 'text-[#714B67]' : 'text-slate-300'}`}
+                  >
                     {result.pointsEarned > 0 ? `+${result.pointsEarned}` : 'Locked'}
-                  </p>
+                  </motion.p>
                   <p className="text-[10px] font-black text-[#714B67]/50 uppercase tracking-widest">
                     {result.pointsEarned > 0 ? 'XP Earned' : 'Mastery XP'}
                   </p>

@@ -14,6 +14,28 @@ const Follow = require('../models/Follow');
 
 const router = express.Router();
 
+router.get('/ping', (req, res) => {
+  console.log('[SOCIAL_API] Ping hit');
+  res.send('pong');
+});
+
+// GET /api/users/social/followers/:id — High priority fallback
+router.get('/social/followers/:id', async (req, res) => {
+  console.log(`[SOCIAL_API] Fetching followers for: ${req.params.id}`);
+  try {
+    const followers = await Follow.find({ followingId: req.params.id }).populate('followerId', 'name avatar role').lean();
+    res.json(followers.filter(f => f.followerId).map(f => ({ ...f.followerId, id: f.followerId._id.toString() })));
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+router.get('/social/following/:id', async (req, res) => {
+  console.log(`[SOCIAL_API] Fetching following for: ${req.params.id}`);
+  try {
+    const following = await Follow.find({ followerId: req.params.id }).populate('followingId', 'name avatar role').lean();
+    res.json(following.filter(f => f.followingId).map(f => ({ ...f.followingId, id: f.followingId._id.toString() })));
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
 // GET /api/users — Admin: list all users
 router.get('/', authenticate, requireRole('ADMIN'), async (req, res) => {
   try {
@@ -39,6 +61,49 @@ router.get('/', authenticate, requireRole('ADMIN'), async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }
+});
+
+// GET /api/users/:id/followers
+router.get('/:id/followers', async (req, res) => {
+  console.log(`[SOCIAL_API] Fetching followers for user ID: ${req.params.id}`);
+  try {
+    const followers = await Follow.find({ followingId: req.params.id })
+      .populate('followerId', 'id name avatar role totalPoints')
+      .lean();
+    res.json(followers.filter(f => f.followerId).map(f => ({ ...f.followerId, id: f.followerId._id.toString() })));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// GET /api/users/:id/following
+router.get('/:id/following', async (req, res) => {
+  console.log(`[SOCIAL_API] Fetching following for user ID: ${req.params.id}`);
+  try {
+    const following = await Follow.find({ followerId: req.params.id })
+      .populate('followingId', 'id name avatar role totalPoints')
+      .lean();
+    res.json(following.filter(f => f.followingId).map(f => ({ ...f.followingId, id: f.followingId._id.toString() })));
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Fallback social routes
+router.get('/social/followers/:id', async (req, res) => {
+  console.log(`[FALLBACK_API] Hit followers fallback for: ${req.params.id}`);
+  try {
+    const followers = await Follow.find({ followingId: req.params.id }).populate('followerId', 'name avatar role').lean();
+    res.json(followers.filter(f => f.followerId).map(f => ({ ...f.followerId, id: f.followerId._id.toString() })));
+  } catch (e) { res.status(500).json({ message: e.message }); }
+});
+
+router.get('/social/following/:id', async (req, res) => {
+  console.log(`[FALLBACK_API] Hit following fallback for: ${req.params.id}`);
+  try {
+    const following = await Follow.find({ followerId: req.params.id }).populate('followingId', 'name avatar role').lean();
+    res.json(following.filter(f => f.followingId).map(f => ({ ...f.followingId, id: f.followingId._id.toString() })));
+  } catch (e) { res.status(500).json({ message: e.message }); }
 });
 
 // PATCH /api/users/:id/toggle-status — Admin: ban/unban user
@@ -113,6 +178,24 @@ router.patch('/me/notifications/read', authenticate, async (req, res) => {
   }
 });
 
+// PATCH /api/users/me/profile — Update user's own profile data
+router.patch('/me/profile', authenticate, async (req, res) => {
+  try {
+    const { bio, contactNo, information, name, avatar } = req.body;
+    const update = {};
+    if (bio !== undefined) update.bio = bio;
+    if (contactNo !== undefined) update.contactNo = contactNo;
+    if (information !== undefined) update.information = information;
+    if (name !== undefined) update.name = name;
+    if (avatar !== undefined) update.avatar = avatar;
+
+    const user = await User.findByIdAndUpdate(req.user.id, update, { new: true }).select('-password').lean({ virtuals: true });
+    res.json(user);
+  } catch (error) {
+    res.status(500).json({ message: 'Error updating profile' });
+  }
+});
+
 // POST /api/users/:id/follow — Toggle follow
 router.post('/:id/follow', authenticate, async (req, res) => {
   try {
@@ -126,6 +209,24 @@ router.post('/:id/follow', authenticate, async (req, res) => {
     }
 
     await new Follow({ followerId: req.user.id, followingId: req.params.id }).save();
+    
+    // Notification & Socket
+    try {
+      const follower = await User.findById(req.user.id).select('name');
+      const notif = await new Notification({
+        userId: req.params.id,
+        type: 'FOLLOW',
+        message: `${follower.name} started following you!`,
+        link: `/network/${req.user.id}`
+      }).save();
+      
+      const { sendToUser } = require('../services/socketService');
+      sendToUser(req.params.id, 'new_notification', notif);
+      sendToUser(req.params.id, 'new_follower', { followerId: req.user.id, name: follower.name });
+    } catch (err) {
+      console.error('Follow notification error:', err);
+    }
+
     res.json({ following: true });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
@@ -136,7 +237,7 @@ router.post('/:id/follow', authenticate, async (req, res) => {
 router.get('/:id/profile', async (req, res) => {
   try {
     const profile = await User.findById(req.params.id)
-      .select('id name avatar role totalPoints createdAt')
+      .select('id name avatar role totalPoints createdAt bio contactNo information email')
       .lean({ virtuals: true });
 
     if (!profile) return res.status(404).json({ message: 'User not found' });

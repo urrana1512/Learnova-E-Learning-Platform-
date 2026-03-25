@@ -3,6 +3,7 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const fileUpload = require('express-fileupload');
+// Restart trigger: Social API sync
 const os = require('os');
 const { connectDB } = require('./config/db');
 
@@ -12,6 +13,8 @@ const enrollmentRoutes = require('./routes/enrollments');
 const progressRoutes = require('./routes/progress');
 const reportingRoutes = require('./routes/reporting');
 const paymentRoutes = require('./routes/payments');
+const learnerRoutes = require('./routes/learner');
+const socialRoutes = require('./routes/social');
 
 // Lesson and quiz controllers for standalone + nested routes
 const {
@@ -22,10 +25,23 @@ const {
   addQuestion, updateQuestion, deleteQuestion, updateRewards, submitAttempt,
 } = require('./controllers/quizController');
 const { getReviews, createReview } = require('./controllers/reviewController');
+const { addBookmark, removeBookmark, getBookmarks } = require('./controllers/bookmarkController');
+const { upsertNote, deleteNote, getNotes } = require('./controllers/noteController');
+const messageController = require('./controllers/messageController');
+const wishlistController = require('./controllers/wishlistController');
+const learnerController = require('./controllers/learnerController');
+const announcementController = require('./controllers/announcementController');
 const authenticate = require('./middleware/auth');
 const requireRole = require('./middleware/role');
 
+const { initSocket } = require('./services/socketService');
+const http = require('http');
+
 const app = express();
+const server = http.createServer(app);
+
+// Initialize Socket.io
+initSocket(server);
 
 app.use(helmet());
 app.use(cors({
@@ -58,6 +74,8 @@ app.use('/api/progress', progressRoutes);
 app.use('/api/reporting', reportingRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/users', require('./routes/users'));
+app.use('/api/learner', learnerRoutes);
+app.use('/api/social', socialRoutes);
 
 // Course-scoped lessons
 app.get('/api/courses/:courseId/lessons', authenticate, getLessons);
@@ -92,6 +110,39 @@ app.post('/api/quizzes/:id/attempt', authenticate, requireRole('LEARNER', 'ADMIN
 app.get('/api/reviews/:courseId', optionalAuth, getReviews);
 app.post('/api/reviews/:courseId', authenticate, createReview);
 
+// Bookmarks
+app.get('/api/bookmarks', authenticate, getBookmarks);
+app.post('/api/bookmarks', authenticate, addBookmark);
+app.delete('/api/bookmarks/:lessonId', authenticate, removeBookmark);
+
+// Notes
+app.get('/api/notes', authenticate, getNotes);
+app.post('/api/notes', authenticate, upsertNote);
+app.delete('/api/notes/:lessonId', authenticate, deleteNote);
+
+// Message Routes
+app.post('/api/messages', authenticate, messageController.send);
+app.get('/api/messages/history/:userId/:courseId', authenticate, messageController.getConversation);
+app.get('/api/messages/chats', authenticate, messageController.getChats);
+app.put('/api/messages/read/:senderId/:courseId', authenticate, messageController.markAsRead);
+app.post('/api/messages/upload', authenticate, messageController.uploadAttachment);
+app.post('/api/messages/broadcast', authenticate, requireRole('INSTRUCTOR', 'ADMIN'), messageController.broadcast);
+app.post('/api/messages/broadcast/course', authenticate, requireRole('INSTRUCTOR', 'ADMIN'), messageController.broadcastToCourse);
+
+// Learner Performance & Ranking
+app.get('/api/learner/dashboard', authenticate, learnerController.getDashboardStats);
+app.get('/api/learner/leaderboard', authenticate, learnerController.getLeaderboard);
+app.get('/api/learner/insights', authenticate, learnerController.getLearningInsights);
+
+// Wishlist
+app.post('/api/wishlist/toggle', authenticate, wishlistController.toggle);
+app.get('/api/wishlist', authenticate, wishlistController.get);
+
+// Announcements
+app.get('/api/courses/:courseId/announcements', authenticate, announcementController.getCourseAnnouncements);
+app.post('/api/courses/:courseId/announcements', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), announcementController.createAnnouncement);
+app.delete('/api/announcements/:id', authenticate, requireRole('ADMIN', 'INSTRUCTOR'), announcementController.deleteAnnouncement);
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: 'Learnova API running' });
@@ -106,7 +157,7 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5000;
 
 connectDB().then(() => {
-  const server = app.listen(PORT, '127.0.0.1', () =>
+  server.listen(PORT, '0.0.0.0', () =>
     console.log(`🚀 Learnova server running on port ${PORT}\n✅ Learnova Communication Station ready for discovery`)
   );
 

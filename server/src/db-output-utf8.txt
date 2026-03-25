@@ -1,0 +1,39 @@
+﻿Connecting to: mongodb://localhost:27017/Learnova
+Connected to DB
+COURSE DATA: {
+  "_id": "69c16c5ab104c5c560f1b863",
+  "title": "React Js",
+  "description": "React (also known as React.js or ReactJS) is a popular, open-source JavaScript library used to build interactive user interfaces (UIs) for web and mobile applications. It was developed by Meta (formerly Facebook) and is maintained by a large community of developers. \n\nKey Features:\nComponent-Based Architecture: React allows you to break down complex UIs into small, self-contained, and reusable \"components\" (like buttons or forms).\nVirtual DOM: Instead of updating the entire webpage every time something changes, React uses a \"Virtual DOM\" to track changes and only update the specific parts that need it, making apps much faster.\nDeclarative UI: You describe what your UI should look like for various states, and React handles the efficient rendering when your data changes.\nJSX: React uses a syntax called JSX, which looks like HTML but lives inside your JavaScript code, making it easier to visualize the UI structure.",
+  "coverImage": null,
+  "tags": [
+    "Beginner"
+  ],
+  "isPublished": true,
+  "visibility": "EVERYONE",
+  "accessRule": "ON_PAYMENT",
+  "price": 7999,
+  "website": "",
+  "instructorId": "69c167b0b104c5c560f1b7f7",
+  "rewardXP": 500,
+  "createdAt": "2026-03-23T16:37:46.705Z",
+  "updatedAt": "2026-03-24T10:15:37.101Z",
+  "__v": 0
+}
+LESSONS DATA: [
+  {
+    "_id": "69c22440ac949983ff70df13",
+    "courseId": "69c16c5ab104c5c560f1b863",
+    "title": "Introduction to React Js + Installation _ Complete React Course in Hindi #1",
+    "type": "VIDEO",
+    "videoUrl": "",
+    "duration": null,
+    "fileUrl": null,
+    "allowDownload": true,
+    "description": "",
+    "order": 1,
+    "quizId": null,
+    "createdAt": "2026-03-24T05:42:24.913Z",
+    "__v": 0
+  }
+]
+ATTACHMENTS DATA: []

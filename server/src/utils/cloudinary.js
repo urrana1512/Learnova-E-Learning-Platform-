@@ -8,6 +8,7 @@ cloudinary.config({
 
 const uploadToCloudinary = async (file, folder = 'learnova') => {
   try {
+    console.log(`[Cloudinary] Uploading file from: ${file.tempFilePath} to folder: ${folder}`);
     const result = await cloudinary.uploader.upload(file.tempFilePath, {
       folder,
       resource_type: 'auto',
