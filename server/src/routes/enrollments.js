@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { enroll, getMyEnrollments, completeCourse, updateTimeSpent } = require('../controllers/enrollmentController');
+const { enroll, getMyEnrollments, completeCourse, updateTimeSpent } = require('../controllers/instructor/instructorEnrollmentController');
 const authenticate = require('../middleware/auth');
 const requireRole = require('../middleware/role');
 const Enrollment = require('../models/Enrollment');

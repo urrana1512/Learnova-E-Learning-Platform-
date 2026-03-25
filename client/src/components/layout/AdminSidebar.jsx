@@ -28,7 +28,7 @@ const getNavLinks = (userId, role) => {
     return [
       { to: "/admin/dashboard", icon: LayoutDashboard, label: "Admin Console" },
       { to: "/admin/course-management", icon: BookOpen, label: "Course Master" },
-      { to: "/admin/user-management", icon: Users, label: "Users Registry" },
+      { to: "/admin/users", icon: Users, label: "Users Registry" },
       { to: "/admin/analytics", icon: BarChart2, label: "Platform Metrics" },
       { to: "/admin/messages", icon: MessageSquare, label: "System Messages" },
       { to: "/admin/notifications", icon: Bell, label: "Alerts" },

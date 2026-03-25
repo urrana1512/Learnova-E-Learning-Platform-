@@ -1,16 +1,16 @@
 const express = require('express');
 const mongoose = require('mongoose');
-const authenticate = require('../middleware/auth');
-const requireRole = require('../middleware/role');
-const User = require('../models/User');
-const Course = require('../models/Course');
-const Enrollment = require('../models/Enrollment');
-const LessonProgress = require('../models/LessonProgress');
-const QuizAttempt = require('../models/QuizAttempt');
-const Review = require('../models/Review');
-const Payment = require('../models/Payment');
-const Notification = require('../models/Notification');
-const Follow = require('../models/Follow');
+const authenticate = require('../../middleware/auth');
+const requireRole = require('../../middleware/role');
+const User = require('../../models/User');
+const Course = require('../../models/Course');
+const Enrollment = require('../../models/Enrollment');
+const LessonProgress = require('../../models/LessonProgress');
+const QuizAttempt = require('../../models/QuizAttempt');
+const Review = require('../../models/Review');
+const Payment = require('../../models/Payment');
+const Notification = require('../../models/Notification');
+const Follow = require('../../models/Follow');
 
 const router = express.Router();
 
@@ -220,7 +220,7 @@ router.post('/:id/follow', authenticate, async (req, res) => {
         link: `/network/${req.user.id}`
       }).save();
       
-      const { sendToUser } = require('../services/socketService');
+      const { sendToUser } = require('../../services/socketService');
       sendToUser(req.params.id, 'new_notification', notif);
       sendToUser(req.params.id, 'new_follower', { followerId: req.user.id, name: follower.name });
     } catch (err) {
@@ -271,7 +271,7 @@ router.get('/:id/profile', async (req, res) => {
       courses.map(async (c) => {
         const [enrollments, lessons, reviews] = await Promise.all([
           Enrollment.countDocuments({ courseId: c._id }),
-          require('../models/Lesson').countDocuments({ courseId: c._id }),
+          require('../../models/Lesson').countDocuments({ courseId: c._id }),
           Review.countDocuments({ courseId: c._id }),
         ]);
         return { ...c, id: c._id.toString(), _count: { enrollments, lessons, reviews } };

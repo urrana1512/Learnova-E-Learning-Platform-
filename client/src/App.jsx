@@ -14,16 +14,18 @@ import { LoadingScreen } from "./components/ui/Spinner";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 
+// Instructor Pages
+import InstructorDashboard from "./pages/instructor/InstructorDashboard";
+import CoursesDashboard from "./pages/instructor/CoursesDashboard";
+import CourseForm from "./pages/instructor/CourseForm";
+import QuizBuilder from "./pages/instructor/QuizBuilder";
+import InstructorRevenue from "./pages/instructor/InstructorRevenue";
+import CourseAttendees from "./pages/instructor/CourseAttendees";
+import InstructorSocial from "./pages/instructor/InstructorSocial";
+
 // Admin Pages
-import Dashboard from "./pages/admin/Dashboard";
-import CoursesDashboard from "./pages/admin/CoursesDashboard";
-import CourseForm from "./pages/admin/CourseForm";
-import QuizBuilder from "./pages/admin/QuizBuilder";
-import Reporting from "./pages/admin/Reporting";
-import UsersDashboard from "./pages/admin/UsersDashboard";
-import InstructorRevenue from "./pages/admin/InstructorRevenue";
-import CourseAttendees from "./pages/admin/CourseAttendees";
-import InstructorSocial from "./pages/admin/InstructorSocial";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import PlatformReporting from "./pages/admin/PlatformReporting";
 
 // Learner Pages
 import CoursesPage from "./pages/learner/CoursesPage";
@@ -39,9 +41,9 @@ import MobileGateway from "./pages/learner/MobileGateway";
 import Leaderboard from "./pages/learner/Leaderboard";
 import Notifications from "./pages/learner/Notifications";
 import ChatPage from "./pages/learner/ChatPage";
-import FollowersManager from "./pages/social/FollowersManager";
-import SocialHub from "./pages/social/SocialHub";
-import FriendsManager from "./pages/social/FriendsManager";
+import FollowersManager from "./pages/instructor/FollowersManager";
+import SocialHub from "./pages/learner/SocialHub";
+import NetworkManager from "./pages/learner/NetworkManager";
 
 const ProtectedRoute = ({ roles }) => {
   const { user, loading } = useAuth();
@@ -113,7 +115,7 @@ const AnimatedRoutes = () => {
           <Route path="/learner/my-learning" element={<PageWrapper><MyCourses /></PageWrapper>} />
           <Route path="/learner/catalog" element={<PageWrapper><CoursesPage /></PageWrapper>} />
           <Route path="/learner/social-hub" element={<PageWrapper><SocialHub /></PageWrapper>} />
-          <Route path="/learner/network" element={<PageWrapper><FriendsManager /></PageWrapper>} />
+          <Route path="/learner/network" element={<PageWrapper><NetworkManager /></PageWrapper>} />
           <Route path="/learner/leaderboard" element={<PageWrapper><Leaderboard /></PageWrapper>} />
           <Route path="/learner/notifications" element={<PageWrapper><Notifications /></PageWrapper>} />
           <Route path="/learner/messages" element={<PageWrapper><ChatPage /></PageWrapper>} />
@@ -130,13 +132,13 @@ const AnimatedRoutes = () => {
 
         {/* Instructor Namespace */}
         <Route element={<ProtectedRoute roles={["INSTRUCTOR", "ADMIN"]} />}>
-          <Route path="/instructor/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
+          <Route path="/instructor/dashboard" element={<PageWrapper><InstructorDashboard /></PageWrapper>} />
           <Route path="/instructor/curriculum" element={<PageWrapper><CoursesDashboard /></PageWrapper>} />
           <Route path="/instructor/curriculum/:id/edit" element={<PageWrapper><CourseForm /></PageWrapper>} />
           <Route path="/instructor/curriculum/:id/attendees" element={<PageWrapper><CourseAttendees /></PageWrapper>} />
           <Route path="/instructor/curriculum/:id/quiz/:quizId" element={<PageWrapper><QuizBuilder /></PageWrapper>} />
           <Route path="/instructor/revenue" element={<PageWrapper><InstructorRevenue /></PageWrapper>} />
-          <Route path="/instructor/analytics" element={<PageWrapper><Reporting /></PageWrapper>} />
+          <Route path="/instructor/analytics" element={<PageWrapper><PlatformReporting /></PageWrapper>} />
           <Route path="/instructor/social" element={<PageWrapper><InstructorSocial /></PageWrapper>} />
           <Route path="/instructor/audience" element={<PageWrapper><FollowersManager /></PageWrapper>} />
           <Route path="/instructor/messages" element={<PageWrapper><ChatPage /></PageWrapper>} />
@@ -146,10 +148,11 @@ const AnimatedRoutes = () => {
 
         {/* Admin Namespace */}
         <Route element={<ProtectedRoute roles={["ADMIN"]} />}>
-          <Route path="/admin/dashboard" element={<PageWrapper><Dashboard /></PageWrapper>} />
-          <Route path="/admin/user-management" element={<PageWrapper><UsersDashboard /></PageWrapper>} />
+          <Route path="/admin/dashboard" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
+          <Route path="/admin/users" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
+          <Route path="/admin/user-management" element={<PageWrapper><AdminDashboard /></PageWrapper>} />
           <Route path="/admin/course-management" element={<PageWrapper><CoursesDashboard /></PageWrapper>} />
-          <Route path="/admin/analytics" element={<PageWrapper><Reporting /></PageWrapper>} />
+          <Route path="/admin/analytics" element={<PageWrapper><PlatformReporting /></PageWrapper>} />
           <Route path="/admin/messages" element={<PageWrapper><ChatPage /></PageWrapper>} />
           <Route path="/admin/notifications" element={<PageWrapper><Notifications /></PageWrapper>} />
         </Route>

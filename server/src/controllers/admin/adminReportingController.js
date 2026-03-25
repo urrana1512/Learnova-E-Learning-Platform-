@@ -1,10 +1,9 @@
-const Enrollment = require('../models/Enrollment');
-const Lesson = require('../models/Lesson');
-const LessonProgress = require('../models/LessonProgress');
-const Course = require('../models/Course');
-const Review = require('../models/Review');
-const Payment = require('../models/Payment');
-const User = require('../models/User');
+const Enrollment = require('../../models/Enrollment');
+const Lesson = require('../../models/Lesson');
+const Announcement = require('../../models/Announcement');
+const Course = require('../../models/Course');
+const Payment = require('../../models/Payment');
+const User = require('../../models/User');
 
 const getReporting = async (req, res) => {
   try {

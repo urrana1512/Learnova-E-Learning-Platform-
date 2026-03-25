@@ -1,10 +1,10 @@
-const { sendLearnerEnrollmentEmail, sendInstructorEnrollmentEmail } = require('../utils/email');
-const Enrollment = require('../models/Enrollment');
-const Course = require('../models/Course');
-const User = require('../models/User');
-const Payment = require('../models/Payment');
-const Notification = require('../models/Notification');
-const LessonProgress = require('../models/LessonProgress');
+const { sendLearnerEnrollmentEmail, sendInstructorEnrollmentEmail } = require('../../utils/email');
+const Enrollment = require('../../models/Enrollment');
+const Course = require('../../models/Course');
+const User = require('../../models/User');
+const Payment = require('../../models/Payment');
+const Notification = require('../../models/Notification');
+const LessonProgress = require('../../models/LessonProgress');
 
 const enroll = async (req, res) => {
   try {
@@ -78,11 +78,11 @@ const enroll = async (req, res) => {
             link: `/admin/courses/${course.id}/attendees`
           }).save();
 
-          const { sendToUser } = require('../services/socketService');
+          const { sendToUser } = require('../../services/socketService');
           sendToUser(course.instructorId.toString(), 'new_notification', notif);
 
           // 4. Platform-wide Admin Alert
-          const { notifyAdmins } = require('../services/notificationService');
+          const { notifyAdmins } = require('../../services/notificationService');
           await notifyAdmins(
             `${learner.name} enrolled in ${course.title}`,
             `/admin/reporting`,
@@ -118,8 +118,7 @@ const getMyEnrollments = async (req, res) => {
     const result = await Promise.all(
       enrollments.map(async (enrollment) => {
         const course = enrollment.courseId;
-        const { Lesson } = require('../models/Lesson') || { Lesson: require('../models/Lesson') };
-        const LessonModel = require('../models/Lesson');
+        const LessonModel = require('../../models/Lesson');
         const lessonIds = (await LessonModel.find({ courseId: course._id }).select('_id').lean()).map((l) => l._id);
         const completedCount = await LessonProgress.countDocuments({
           userId: req.user.id,
@@ -161,7 +160,7 @@ const completeCourse = async (req, res) => {
     existing.completedAt = new Date();
     await existing.save();
 
-    const updatedUser = await require('../models/User').findById(req.user.id).select('totalPoints');
+    const updatedUser = await require('../../models/User').findById(req.user.id).select('totalPoints');
 
     res.json({ enrollment: existing, pointsEarned, totalPoints: updatedUser.totalPoints });
   } catch (error) {

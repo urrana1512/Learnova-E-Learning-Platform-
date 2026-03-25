@@ -1,8 +1,8 @@
-const Enrollment = require('../models/Enrollment');
-const Course = require('../models/Course');
-const LessonProgress = require('../models/LessonProgress');
-const QuizAttempt = require('../models/QuizAttempt');
-const User = require('../models/User');
+const Enrollment = require('../../models/Enrollment');
+const Course = require('../../models/Course');
+const LessonProgress = require('../../models/LessonProgress');
+const QuizAttempt = require('../../models/QuizAttempt');
+const User = require('../../models/User');
 
 const getDashboardStats = async (req, res) => {
   try {
@@ -139,21 +139,14 @@ const getLearningInsights = async (req, res) => {
     const userId = req.user.id;
     
     // Aggregate quiz attempts to find scores by question category
-    // This requires looking up the quiz questions for each attempt
-    const attempts = await QuizAttempt.find({ userId }).populate('quizId').lean();
+    const QuizAttemptModel = require('../../models/QuizAttempt');
+    const attempts = await QuizAttemptModel.find({ userId }).populate('quizId').lean();
     
-    const performanceMap = {}; // { category: { totalScore: 0, count: 0 } }
+    const performanceMap = {};
 
     for (const attempt of attempts) {
       if (!attempt.quizId) continue;
-      
-      // Since specific per-question category scoring is complex without a full answer map,
-      // we'll use a simplified version: assign the attempt score to all categories in the quiz.
-      // Or if the quiz has a primary category (feature to add later), use that.
-      // For now, let's look at the quiz questions' categories if available.
-      
       const categories = [...new Set(attempt.quizId.questions?.map(q => q.category) || ['General'])];
-      
       categories.forEach(cat => {
         if (!performanceMap[cat]) performanceMap[cat] = { total: 0, count: 0 };
         performanceMap[cat].total += attempt.score;

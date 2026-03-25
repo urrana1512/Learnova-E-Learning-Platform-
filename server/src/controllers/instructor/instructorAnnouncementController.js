@@ -1,7 +1,7 @@
-const Announcement = require('../models/Announcement');
-const Enrollment = require('../models/Enrollment');
-const Course = require('../models/Course');
-const Notification = require('../models/Notification');
+const Announcement = require('../../models/Announcement');
+const Enrollment = require('../../models/Enrollment');
+const Course = require('../../models/Course');
+const Notification = require('../../models/Notification');
 
 const createAnnouncement = async (req, res) => {
   try {

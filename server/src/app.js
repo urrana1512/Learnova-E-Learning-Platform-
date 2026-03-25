@@ -11,9 +11,9 @@ const authRoutes = require('./routes/auth');
 const courseRoutes = require('./routes/courses');
 const enrollmentRoutes = require('./routes/enrollments');
 const progressRoutes = require('./routes/progress');
-const reportingRoutes = require('./routes/reporting');
+const reportingRoutes = require('./routes/admin/adminReportingRoutes');
 const paymentRoutes = require('./routes/payments');
-const learnerRoutes = require('./routes/learner');
+const learnerRoutes = require('./routes/learner/learnerRoutes');
 const socialRoutes = require('./routes/social');
 
 // Lesson and quiz controllers for standalone + nested routes
@@ -29,8 +29,8 @@ const { addBookmark, removeBookmark, getBookmarks } = require('./controllers/boo
 const { upsertNote, deleteNote, getNotes } = require('./controllers/noteController');
 const messageController = require('./controllers/messageController');
 const wishlistController = require('./controllers/wishlistController');
-const learnerController = require('./controllers/learnerController');
-const announcementController = require('./controllers/announcementController');
+const learnerController = require('./controllers/learner/learnerController');
+const announcementController = require('./controllers/instructor/instructorAnnouncementController');
 const authenticate = require('./middleware/auth');
 const requireRole = require('./middleware/role');
 
@@ -73,7 +73,7 @@ app.use('/api/enrollments', enrollmentRoutes);
 app.use('/api/progress', progressRoutes);
 app.use('/api/reporting', reportingRoutes);
 app.use('/api/payments', paymentRoutes);
-app.use('/api/users', require('./routes/users'));
+app.use('/api/users', require('./routes/admin/userRoutes'));
 app.use('/api/learner', learnerRoutes);
 app.use('/api/social', socialRoutes);
 
@@ -172,4 +172,3 @@ connectDB().then(() => {
 });
 
 module.exports = app;
-
